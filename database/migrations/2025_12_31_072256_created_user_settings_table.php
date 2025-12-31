@@ -1,0 +1,34 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::create('user_settings', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('user_id')->constrained()->cascadeOnDelete();
+            $table->boolean('notification_email')->default(true);
+            $table->boolean('notification_sms')->default(false);
+            $table->boolean('notification_blood_requests')->default(true);
+            $table->boolean('notification_responses')->default(true);
+            $table->boolean('privacy_show_profile')->default(true);
+            $table->boolean('privacy_show_contact')->default(true);
+            $table->timestamps();
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::dropIfExists('user_settings');
+    }
+};
