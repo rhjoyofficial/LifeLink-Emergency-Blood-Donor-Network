@@ -27,12 +27,5 @@ class DonorResponse extends Model
     {
         return $this->belongsTo(User::class, 'donor_id');
     }
-    protected static function booted()
-    {
-        static::creating(function ($response) {
-            if ($response->donor->role !== 'donor') {
-                throw new \Exception('Only donors can respond to blood requests.');
-            }
-        });
-    }
+  
 }

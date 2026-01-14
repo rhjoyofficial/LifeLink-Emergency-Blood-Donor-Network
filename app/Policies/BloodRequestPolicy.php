@@ -28,7 +28,7 @@ class BloodRequestPolicy
    */
   public function approve(User $user, BloodRequest $request): bool
   {
-    return $user->isAdmin() && $request->status === 'pending';
+    return $user->isAdmin() && $request->status === BloodRequest::STATUS_PENDING;
   }
 
   /**
@@ -36,7 +36,18 @@ class BloodRequestPolicy
    */
   public function cancel(User $user, BloodRequest $request): bool
   {
-    return $user->isAdmin() && $request->status !== 'fulfilled';
+    return (
+      $user->isAdmin()
+      || ($user->isRecipient() && $request->recipient_id === $user->id)
+    )
+      && $request->status !== BloodRequest::STATUS_FULFILLED;
+  }
+
+  public function update(User $user, BloodRequest $request): bool
+  {
+    return $user->isRecipient()
+      && $request->recipient_id === $user->id
+      && $request->status === BloodRequest::STATUS_PENDING;
   }
 
   /**
@@ -44,6 +55,6 @@ class BloodRequestPolicy
    */
   public function fulfill(User $user, BloodRequest $request): bool
   {
-    return $user->isAdmin() && $request->status === 'approved';
+    return $user->isAdmin() && $request->status === BloodRequest::STATUS_APPROVED;
   }
 }

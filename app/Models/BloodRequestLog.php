@@ -34,18 +34,4 @@ class BloodRequestLog extends Model
     {
         return $this->belongsTo(User::class, 'changed_by');
     }
-    // public function isPending(): bool
-    // {
-    //     return $this->status === 'pending';
-    // }
-
-    // public function isApproved(): bool
-    // {
-    //     return $this->status === 'approved';
-    // }
-
-    // public function isClosed(): bool
-    // {
-    //     return in_array($this->status, ['fulfilled', 'cancelled'], true);
-    // }
 }

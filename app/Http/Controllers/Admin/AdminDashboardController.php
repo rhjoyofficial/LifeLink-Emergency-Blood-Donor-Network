@@ -169,7 +169,7 @@ class AdminDashboardController extends Controller
             'pending' => BloodRequest::where('status', 'pending')->count(),
             'approved' => BloodRequest::where('status', 'approved')->count(),
             'fulfilled' => BloodRequest::where('status', 'fulfilled')->count(),
-            'rejected' => BloodRequest::where('status', 'rejected')->count(),
+            // 'rejected' => BloodRequest::where('status', 'rejected')->count(),
             'cancelled' => BloodRequest::where('status', 'cancelled')->count(),
         ];
     }

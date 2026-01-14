@@ -5,17 +5,21 @@ namespace App\Services;
 use App\Models\BloodRequest;
 use App\Models\DonorResponse;
 use App\Models\User;
+use Illuminate\Validation\ValidationException;
 
 class DonorResponseService
 {
   public function respond(BloodRequest $bloodRequest, User $donor): DonorResponse
   {
     if ($bloodRequest->status !== 'approved') {
-      throw new \Exception('Cannot respond to inactive blood request.');
+      throw ValidationException::withMessages([
+        'status' => 'Cannot respond to inactive blood request.',
+      ]);
     }
-
-    if ($donor->role !== 'donor') {
-      throw new \Exception('Only donors can respond to blood requests.');
+    if (! $bloodRequest->canDonorRespond()) {
+      throw ValidationException::withMessages([
+        'status' => 'This blood request is no longer active.',
+      ]);
     }
 
     return DonorResponse::firstOrCreate(
@@ -29,10 +33,8 @@ class DonorResponseService
     );
   }
 
-  public function updateStatus(
-    DonorResponse $response,
-    string $status
-  ): DonorResponse {
+  public function updateStatus(DonorResponse $response, string $status): DonorResponse
+  {
     $response->update([
       'response_status' => $status,
     ]);

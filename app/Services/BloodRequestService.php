@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\BloodRequest;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class BloodRequestService
 {
@@ -29,33 +30,38 @@ class BloodRequestService
 
   public function approve(BloodRequest $bloodRequest, User $admin): BloodRequest
   {
-    if ($bloodRequest->status !== 'pending') {
-      throw new \Exception('Only pending requests can be approved.');
+    if ($bloodRequest->status !== BloodRequest::STATUS_PENDING) {
+      throw ValidationException::withMessages([
+        'status' => 'Only pending requests can be approved.',
+      ]);
     }
 
     $bloodRequest->update([
-      'status' => 'approved',
+      'status' => BloodRequest::STATUS_APPROVED,
       'approved_by_admin' => $admin->id,
     ]);
 
     return $bloodRequest;
   }
 
+
   public function fulfill(BloodRequest $bloodRequest): BloodRequest
   {
-    $bloodRequest->update([
-      'status' => 'fulfilled',
-    ]);
+    if ($bloodRequest->status !== BloodRequest::STATUS_APPROVED) {
+      abort(422, 'Only approved requests can be fulfilled.');
+    }
 
+    $bloodRequest->update(['status' => BloodRequest::STATUS_FULFILLED]);
     return $bloodRequest;
   }
 
   public function cancel(BloodRequest $bloodRequest): BloodRequest
   {
-    $bloodRequest->update([
-      'status' => 'cancelled',
-    ]);
+    if ($bloodRequest->status === BloodRequest::STATUS_FULFILLED) {
+      abort(422, 'Fulfilled requests cannot be cancelled.');
+    }
 
+    $bloodRequest->update(['status' => BloodRequest::STATUS_CANCELLED]);
     return $bloodRequest;
   }
 }

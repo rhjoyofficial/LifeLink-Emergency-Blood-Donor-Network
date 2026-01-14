@@ -43,5 +43,37 @@ class UserSeeder extends Seeder
                 'phone' => '0180000000' . $i,
             ]);
         }
+
+        // Admin
+        User::create([
+            'name' => 'System Admin',
+            'email' => 'admin@blood.test',
+            'password' => Hash::make('password'),
+            'role' => 'admin',
+            'is_verified' => true,
+        ]);
+
+        // Recipients
+        User::factory()
+            ->count(5)
+            ->create([
+                'role' => 'recipient',
+                'is_verified' => true,
+            ]);
+
+        // Donors (some verified, some pending)
+        User::factory()
+            ->count(8)
+            ->create([
+                'role' => 'donor',
+                'is_verified' => true,
+            ]);
+
+        User::factory()
+            ->count(2)
+            ->create([
+                'role' => 'donor',
+                'is_verified' => false,
+            ]);
     }
 }

@@ -20,28 +20,10 @@ return new class extends Migration
 
             $table->string('district');
             $table->string('upazila');
-            $table->enum('blood_group', [
-                'A+',
-                'A-',
-                'B+',
-                'B-',
-                'O+',
-                'O-',
-                'AB+',
-                'AB-'
-            ])->nullable();
-
-            $table->enum('status', [
-                'pending',
-                'approved',
-                'fulfilled',
-                'cancelled'
-            ])->default('pending');
-            
             $table->timestamps();
 
             $table->unique('user_id');
-            $table->index(['blood_group', 'district', 'status']);
+            $table->index(['district']);
         });
     }
 

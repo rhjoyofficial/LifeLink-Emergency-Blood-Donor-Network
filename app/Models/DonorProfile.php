@@ -39,7 +39,7 @@ class DonorProfile extends Model
         return $this->is_available && $this->approved_by_admin;
     }
 
-    public function canDonate()
+    public function canDonate(): bool
     {
         // If they have never donated, they can donate
         if (!$this->last_donation_date) {

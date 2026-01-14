@@ -15,7 +15,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'role' => \App\Http\Middleware\RoleMiddleware::class,
             'verified.user' => \App\Http\Middleware\VerifiedUserMiddleware::class,
-            'donor.profile.missing' => \App\Http\Middleware\DonorProfileMissingMiddleware::class,
+            'donor.profile.missing' => \App\Http\Middleware\DonorProfileExistsMiddleware::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

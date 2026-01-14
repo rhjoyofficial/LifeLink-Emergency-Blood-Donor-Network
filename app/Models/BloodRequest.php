@@ -10,7 +10,10 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class BloodRequest extends Model
 {
     use HasFactory;
-
+    public const STATUS_PENDING = 'pending';
+    public const STATUS_APPROVED = 'approved';
+    public const STATUS_FULFILLED = 'fulfilled';
+    public const STATUS_CANCELLED = 'cancelled';
     protected $fillable = [
         'recipient_id',
         'patient_name',
@@ -21,9 +24,7 @@ class BloodRequest extends Model
         'upazila',
         'contact_phone',
         'urgency_level',
-        'status',
         'needed_at',
-        'approved_by_admin',
     ];
 
     protected $casts = [

@@ -11,14 +11,16 @@ class BloodRequestLogSeeder extends Seeder
 {
     public function run(): void
     {
-        $request = BloodRequest::first();
         $admin = User::where('role', 'admin')->first();
 
-        BloodRequestLog::create([
-            'blood_request_id' => $request->id,
-            'old_status' => 'pending',
-            'new_status' => 'approved',
-            'changed_by' => $admin->id,
-        ]);
+        BloodRequest::all()->each(function ($request) use ($admin) {
+            BloodRequestLog::create([
+                'blood_request_id' => $request->id,
+                'old_status' => BloodRequest::STATUS_PENDING,
+                'new_status' => $request->status,
+                'changed_by' => $request->approved_by_admin ?? $admin->id, 
+                'created_at' => $request->updated_at,
+            ]);
+        });
     }
 }

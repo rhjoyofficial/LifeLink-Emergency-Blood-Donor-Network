@@ -10,14 +10,12 @@ class RecipientProfileSeeder extends Seeder
 {
     public function run(): void
     {
-        $recipients = User::where('role', 'recipient')->get();
-
-        foreach ($recipients as $recipient) {
+        User::where('role', 'recipient')->each(function ($user) {
             RecipientProfile::create([
-                'user_id' => $recipient->id,
+                'user_id' => $user->id,
                 'district' => 'Dhaka',
-                'upazila' => 'Mirpur',
+                'upazila' => 'Dhanmondi',
             ]);
-        }
+        });
     }
 }

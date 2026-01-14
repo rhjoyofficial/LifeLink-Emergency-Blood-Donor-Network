@@ -11,15 +11,18 @@ class DonorResponseSeeder extends Seeder
 {
     public function run(): void
     {
-        $request = BloodRequest::first();
-        $donors = User::where('role', 'donor')->take(2)->get();
+        $donors = User::where('role', 'donor')->where('is_verified', true)->get();
+        $requests = BloodRequest::where('status', BloodRequest::STATUS_APPROVED)->get();
 
-        foreach ($donors as $donor) {
-            DonorResponse::create([
-                'blood_request_id' => $request->id,
-                'donor_id' => $donor->id,
-                'response_status' => 'interested',
-            ]);
+        foreach ($requests as $request) {
+            $donors->random(2)->each(function ($donor) use ($request) {
+                DonorResponse::firstOrCreate([
+                    'blood_request_id' => $request->id,
+                    'donor_id' => $donor->id,
+                ], [
+                    'response_status' => 'interested',
+                ]);
+            });
         }
     }
 }
