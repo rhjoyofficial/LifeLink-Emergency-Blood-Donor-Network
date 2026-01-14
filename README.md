@@ -1,59 +1,171 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# LifeLink – Emergency Blood Donor Network
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+LifeLink is a **production-grade Laravel 12 web application** designed to connect verified blood donors with patients during medical emergencies through a secure, structured, and admin-controlled system.
 
-## About Laravel
+This project focuses on **data integrity, role-based access, and real-world emergency workflows**, making it suitable for academic submission, portfolio demonstration, and real deployment.
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+---
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## 🚀 Key Features
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+### 🔐 Authentication & Security
 
-## Learning Laravel
+* Laravel Breeze authentication
+* Email verification
+* Admin verification (`is_verified`)
+* Role-based access control (Admin / Donor / Recipient)
+* Policy-driven authorization
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+### 🩸 Blood Request Management
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+* Recipients can create emergency blood requests
+* Admin approval required before donors can respond
+* Strict request lifecycle enforcement
+* Automatic audit logging for every status change
 
-## Laravel Sponsors
+### 🧑‍⚕️ Donor Management
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+* Donor profile creation & approval
+* Availability control
+* Donation eligibility check (90-day rule)
+* Location & blood-group–based matching
 
-### Premium Partners
+### 📊 Admin Panel
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+* User verification & role management
+* Donor approval / rejection
+* Request approval, fulfilment, cancellation
+* System statistics & reports
 
-## Contributing
+---
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+## 🧠 System Roles
 
-## Code of Conduct
+### Admin
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+* Verify users
+* Approve donor profiles
+* Approve / cancel / fulfill blood requests
+* View reports and statistics
 
-## Security Vulnerabilities
+### Recipient
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+* Create blood requests
+* Edit or cancel pending requests
+* View donor responses
+* Track request lifecycle
 
-## License
+### Donor
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+* Create and update donor profile
+* Toggle availability (after approval)
+* View approved blood requests
+* Respond to requests
+* Update donation status
+
+---
+
+## 🏗️ Architecture Overview
+
+LifeLink follows a **clean layered architecture**:
+
+```
+Routes → Controllers → Policies → Services → Models → Database
+                     ↘ Observers (Audit & State Enforcement)
+```
+
+### Design Principles
+
+* **Thin controllers** – no business logic
+* **Services** handle all state changes
+* **Policies** handle authorization
+* **Observers** enforce valid state transitions
+* **Models** represent data only
+
+---
+
+## 🔄 Blood Request Lifecycle
+
+```
+PENDING
+  │ (Admin Approval)
+  ▼
+APPROVED
+  │ (Donation)
+  ▼
+FULFILLED
+
+OR
+
+PENDING / APPROVED
+  │ (Admin or Recipient)
+  ▼
+CANCELLED
+```
+
+Invalid transitions are blocked automatically.
+
+---
+
+## 🗃️ Database Highlights
+
+Main tables:
+
+* `users`
+* `donor_profiles`
+* `recipient_profiles`
+* `blood_requests`
+* `donor_responses`
+* `blood_request_logs`
+* `user_settings`
+
+Every critical action is auditable.
+
+---
+
+## 🧪 Testing Strategy
+
+* Seeder-based realistic data
+* Role-based testing scenarios
+* Policy and service-level validation
+* Observer-enforced state safety
+
+---
+
+## ⚙️ Tech Stack
+
+* **Backend:** Laravel 12
+* **Frontend:** Blade + Tailwind CSS
+* **Database:** MySQL
+* **Auth:** Laravel Breeze
+* **Architecture:** MVC + Services + Policies + Observers
+
+---
+
+## 📦 Installation
+
+```bash
+git clone https://github.com/rhjoyofficial/lifelink.git
+cd lifelink
+composer install
+cp .env.example .env
+php artisan key:generate
+php artisan migrate --seed
+php artisan serve
+```
+
+---
+
+## ✅ Production Readiness
+
+✔ Role-based access control
+✔ Verified user enforcement
+✔ Strict state transitions
+✔ Audit logs
+✔ Scalable architecture
+
+---
+
+## 🧩 One-Line Summary
+
+LifeLink is a Laravel-based emergency blood donation platform that securely connects verified donors with patients through admin-controlled workflows and auditable state management.
