@@ -21,7 +21,16 @@ class DonorResponseService
         'status' => 'This blood request is no longer active.',
       ]);
     }
-
+    if (!$donor->donorProfile || !$donor->donorProfile->isActive()) {
+      throw ValidationException::withMessages([
+        'profile' => 'Your donor profile is not active or approved.',
+      ]);
+    }
+    if (!$donor->donorProfile->canDonate()) {
+      throw ValidationException::withMessages([
+        'eligibility' => 'You are not eligible to donate yet. Minimum 90 days required between donations.',
+      ]);
+    }
     return DonorResponse::firstOrCreate(
       [
         'blood_request_id' => $bloodRequest->id,

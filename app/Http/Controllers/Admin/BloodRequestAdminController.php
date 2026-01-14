@@ -4,42 +4,31 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\BloodRequest;
-use App\Models\User;
 use App\Services\BloodRequestService;
 use Illuminate\Http\Request;
 
 class BloodRequestAdminController extends Controller
 {
     public function __construct(
-        private BloodRequestService $bloodRequestService
+        private readonly BloodRequestService $bloodRequestService
     ) {}
 
     public function index(Request $request)
     {
-        $status = $request->query('status');
-        $urgency = $request->query('urgency');
+        $query = BloodRequest::with('recipient')
+            ->orderBy('needed_at');
 
-        $query = BloodRequest::with(['recipient', 'approvedBy'])
-            ->orderBy('needed_at', 'asc');
-
-        if ($status && $status !== 'all') {
-            $query->where('status', $status);
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
         }
 
-        if ($urgency && $urgency !== 'all') {
-            $query->where('urgency_level', $urgency);
+        if ($request->filled('urgency')) {
+            $query->where('urgency_level', $request->urgency);
         }
 
         $requests = $query->paginate(20);
 
-        $stats = [
-            'total' => BloodRequest::count(),
-            'pending' => BloodRequest::where('status', 'pending')->count(),
-            'approved' => BloodRequest::where('status', 'approved')->count(),
-            'fulfilled' => BloodRequest::where('status', 'fulfilled')->count(),
-        ];
-
-        return view('admin.blood-requests.index', compact('requests', 'stats'));
+        return view('admin.blood-requests.index', compact('requests'));
     }
 
     public function show(BloodRequest $bloodRequest)
@@ -47,8 +36,8 @@ class BloodRequestAdminController extends Controller
         $bloodRequest->load([
             'recipient',
             'approvedBy',
-            'donorResponses.donor.donorProfile',
-            'logs.changedBy'
+            'donorResponses.donor',
+            'logs.changedBy',
         ]);
 
         return view('admin.blood-requests.show', compact('bloodRequest'));
@@ -58,63 +47,49 @@ class BloodRequestAdminController extends Controller
     {
         $this->authorize('approve', $bloodRequest);
 
-        $admin = auth()->user();
-        $approvedRequest = $this->bloodRequestService->approve($bloodRequest, $admin);
+        $this->bloodRequestService->approve($bloodRequest, auth()->user());
 
-        return redirect()->back()->with('success', 'Blood request approved successfully.');
+        return back()->with('success', 'Blood request approved.');
     }
 
     public function fulfill(BloodRequest $bloodRequest)
     {
         $this->authorize('fulfill', $bloodRequest);
 
-        $fulfilledRequest = $this->bloodRequestService->fulfill($bloodRequest);
+        $this->bloodRequestService->fulfill($bloodRequest);
 
-        return redirect()->back()->with('success', 'Blood request marked as fulfilled.');
+        return back()->with('success', 'Blood request marked as fulfilled.');
     }
 
     public function cancel(BloodRequest $bloodRequest)
     {
         $this->authorize('cancel', $bloodRequest);
 
-        $cancelledRequest = $this->bloodRequestService->cancel($bloodRequest);
+        $this->bloodRequestService->cancel($bloodRequest);
 
-        return redirect()->back()->with('success', 'Blood request cancelled.');
+        return back()->with('success', 'Blood request cancelled.');
     }
 
     public function destroy(BloodRequest $bloodRequest)
     {
-        if (!$bloodRequest->isPending()) {
-            return redirect()->back()->with('error', 'Only pending requests can be deleted.');
+        if (! $bloodRequest->isPending()) {
+            return back()->with('error', 'Only pending requests can be deleted.');
         }
 
         $bloodRequest->delete();
 
-        return redirect()->route('admin.blood-requests.index')->with('success', 'Blood request deleted successfully.');
+        return redirect()
+            ->route('admin.blood-requests.index')
+            ->with('success', 'Blood request deleted.');
     }
 
     public function statistics()
     {
-        $totalRequests = BloodRequest::count();
-        $pendingRequests = BloodRequest::where('status', 'pending')->count();
-        $approvedRequests = BloodRequest::where('status', 'approved')->count();
-        $fulfilledRequests = BloodRequest::where('status', 'fulfilled')->count();
-
-        $urgentRequests = BloodRequest::where('urgency_level', 'critical')
-            ->where('status', 'approved')
-            ->count();
-
-        $todayRequests = BloodRequest::whereDate('created_at', today())->count();
-
         return response()->json([
-            'data' => [
-                'total_requests' => $totalRequests,
-                'pending_requests' => $pendingRequests,
-                'approved_requests' => $approvedRequests,
-                'fulfilled_requests' => $fulfilledRequests,
-                'urgent_requests' => $urgentRequests,
-                'today_requests' => $todayRequests,
-            ]
+            'pending'   => BloodRequest::where('status', BloodRequest::STATUS_PENDING)->count(),
+            'approved'  => BloodRequest::where('status', BloodRequest::STATUS_APPROVED)->count(),
+            'fulfilled' => BloodRequest::where('status', BloodRequest::STATUS_FULFILLED)->count(),
+            'cancelled' => BloodRequest::where('status', BloodRequest::STATUS_CANCELLED)->count(),
         ]);
     }
 }

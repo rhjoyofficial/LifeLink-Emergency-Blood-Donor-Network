@@ -1,33 +1,18 @@
-<footer class="bg-white border-t border-gray-200">
-    <div class="px-4 py-2">
-        <div class="max-w-8xl mx-auto">
-            <div class="flex flex-col md:flex-row justify-between items-center">
-                <div class="mb-4 md:mb-0">                    
-                    <p class="mt-2 text-sm text-gray-600">
-                        &copy; {{ date('Y') }} LifeLink. All rights reserved.
-                    </p>
-                </div>
-
-                <div class="mt-4 md:mt-0">
-                    <div class="flex items-center space-x-3">
-                        <span class="text-sm text-gray-600">
-                            <i class="fas fa-heart text-red-500 mr-1"></i>
-                            Saving lives together
-                        </span>
-                        <div class="flex space-x-2">
-                            <a href="#" class="text-gray-400 hover:text-red-600">
-                                <i class="fab fa-facebook"></i>
-                            </a>
-                            <a href="#" class="text-gray-400 hover:text-red-600">
-                                <i class="fab fa-twitter"></i>
-                            </a>
-                            <a href="#" class="text-gray-400 hover:text-red-600">
-                                <i class="fab fa-instagram"></i>
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            </div>
+<footer class="bg-white border-t border-gray-200 px-6 py-4">
+    <div class="flex items-center justify-between text-sm text-gray-600">
+        <div class="flex items-center space-x-4">
+            <span>&copy; {{ date('Y') }} LifeLink - Emergency Blood Donor Network</span>
+            <span class="text-gray-300">|</span>
+            <a href="{{ route('about') }}" class="hover:text-primary transition-colors">About</a>
+            <a href="{{ route('contact') }}" class="hover:text-primary transition-colors">Contact</a>
+            <a href="{{ route('privacy') }}" class="hover:text-primary transition-colors">Privacy</a>
+            <a href="{{ route('terms') }}" class="hover:text-primary transition-colors">Terms</a>
+        </div>
+        <div>
+            <span class="text-primary font-medium">Need help?</span>
+            <a href="tel:+8801700000000" class="ml-2 hover:text-primary transition-colors">
+                <i class="fas fa-phone mr-1"></i> +880 1700-000000
+            </a>
         </div>
     </div>
 </footer>

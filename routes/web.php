@@ -1,183 +1,303 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SettingsController;
+
+/* ================= Admin Controllers ================= */
+use App\Http\Controllers\Admin\AdminDashboardController;
 use App\Http\Controllers\Admin\BloodRequestAdminController;
 use App\Http\Controllers\Admin\DonorAdminController;
 use App\Http\Controllers\Admin\UserAdminController;
-use App\Http\Controllers\Recipient\BloodRequestController;
-use App\Http\Controllers\Donor\DonorResponseController;
-use App\Http\Controllers\Donor\DonorProfileController;
-use App\Http\Controllers\Donor\DonorDashboardController;
-use App\Http\Controllers\Admin\AdminDashboardController;
-use App\Http\Controllers\Recipient\RecipientDashboardController;
 
-/* ======================== Public Routes ========================== */
+/* ================= Recipient Controllers ================= */
+use App\Http\Controllers\Recipient\RecipientDashboardController;
+use App\Http\Controllers\Recipient\BloodRequestController;
+
+/* ================= Donor Controllers ================= */
+use App\Http\Controllers\Donor\DonorDashboardController;
+use App\Http\Controllers\Donor\DonorProfileController;
+use App\Http\Controllers\Donor\DonorResponseController;
+
+/*
+|--------------------------------------------------------------------------
+| Public Routes
+|--------------------------------------------------------------------------
+*/
 
 Route::get('/', function () {
     return redirect()->route('dashboard');
 });
 
-/* ======================== Authenticated Routes ========================== */
+/*
+|--------------------------------------------------------------------------
+| Authenticated & Verified Routes
+|--------------------------------------------------------------------------
+*/
 
 Route::middleware(['auth', 'verified.user'])->group(function () {
 
-    /* ======================== Common Routes ========================== */
+    /*
+    |--------------------------------------------------------------------------
+    | Common User Routes
+    |--------------------------------------------------------------------------
+    */
 
-    Route::get('/dashboard', [HomeController::class, 'dashboard'])->name('dashboard');
+    Route::get('/dashboard', [HomeController::class, 'dashboard'])
+        ->name('dashboard');
 
-    Route::get('/profile', [ProfileController::class, 'show'])->name('profile.show');
-    Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
-    Route::put('/profile/password', [ProfileController::class, 'changePassword'])->name('profile.password');
+    Route::get('/profile', [ProfileController::class, 'show'])
+        ->name('profile.show');
 
-    Route::get('/settings', [SettingsController::class, 'index'])->name('settings');
-    Route::put('/settings', [SettingsController::class, 'update'])->name('settings.update');
-    Route::put('/export', [SettingsController::class, 'export'])->name('settings.export');
+    Route::put('/profile', [ProfileController::class, 'update'])
+        ->name('profile.update');
 
-    /* ======================== Recipient Routes ========================== */
+    Route::put('/profile/password', [ProfileController::class, 'changePassword'])
+        ->name('profile.password');
 
-    Route::middleware(['role:recipient'])->prefix('recipient')->name('recipient.')->group(function () {
+    Route::get('/settings', [SettingsController::class, 'index'])
+        ->name('settings');
 
-        // Dashboard
-        Route::get('/dashboard', [RecipientDashboardController::class, 'index'])->name('dashboard');
+    Route::put('/settings', [SettingsController::class, 'update'])
+        ->name('settings.update');
 
-        // Blood Requests - Resourceful Routes
-        Route::resource('blood-requests', BloodRequestController::class)->except(['destroy']);
+    Route::put('/settings/export', [SettingsController::class, 'export'])
+        ->name('settings.export');
 
-        // Additional Blood Request Routes
-        Route::post('/blood-requests/{bloodRequest}/cancel', [BloodRequestController::class, 'cancel'])
-            ->name('blood-requests.cancel');
+    /*
+    |--------------------------------------------------------------------------
+    | Recipient Routes
+    |--------------------------------------------------------------------------
+    */
 
-        Route::get('/blood-requests/{bloodRequest}/donors', [BloodRequestController::class, 'getMatchingDonors'])
-            ->name('blood-requests.donors');
+    Route::middleware(['role:recipient'])
+        ->prefix('recipient')
+        ->name('recipient.')
+        ->group(function () {
 
-        // Statistics
-        Route::get('/statistics', [RecipientDashboardController::class, 'statistics'])
-            ->name('statistics');
-    });
+            Route::get('/dashboard', [RecipientDashboardController::class, 'index'])
+                ->name('dashboard');
 
-    /* ======================== Donor Routes ========================== */
+            Route::get('/statistics', [RecipientDashboardController::class, 'statistics'])
+                ->name('statistics');
 
-    Route::middleware(['role:donor'])->prefix('donor')->name('donor.')->group(function () {
+            Route::resource('blood-requests', BloodRequestController::class)
+                ->except(['destroy']);
 
-        // Dashboard
-        Route::get('/dashboard', [DonorDashboardController::class, 'index'])->name('dashboard');
-        Route::get('/statistics', [DonorDashboardController::class, 'dashboard'])
-            ->name('statistics');
+            Route::post(
+                '/blood-requests/{bloodRequest}/cancel',
+                [BloodRequestController::class, 'cancel']
+            )->name('blood-requests.cancel');
 
-        // Profile Management
-        Route::get('/profile', [DonorProfileController::class, 'show'])->name('profile.show');
-        Route::get('/profile/edit', [DonorProfileController::class, 'edit'])->name('profile.edit');
-        Route::put('/profile', [DonorProfileController::class, 'update'])->name('profile.update');
-        Route::delete('/profile', [DonorProfileController::class, 'destroy'])->name('profile.destroy');
-        Route::post('/profile/create', [DonorProfileController::class, 'store'])
-            ->name('profile.store')->middleware('donor.profile.missing');
-        Route::post('/profile/availability', [DonorProfileController::class, 'toggleAvailability'])
-            ->name('availability.toggle');
+            Route::get(
+                '/blood-requests/{bloodRequest}/donors',
+                [BloodRequestController::class, 'getMatchingDonors']
+            )->name('blood-requests.donors');
+        });
 
+    /*
+    |--------------------------------------------------------------------------
+    | Donor Routes
+    |--------------------------------------------------------------------------
+    */
 
-        // Blood Requests
-        Route::get('/blood-requests/available', [DonorResponseController::class, 'getAvailableRequests'])
-            ->name('blood-requests.available');
+    Route::middleware(['role:donor'])
+        ->prefix('donor')
+        ->name('donor.')
+        ->group(function () {
 
-        Route::get('/blood-requests/{bloodRequest}', [DonorResponseController::class, 'show'])
-            ->name('blood-requests.show');
+            Route::get('/dashboard', [DonorDashboardController::class, 'index'])
+                ->name('dashboard');
 
-        // Responses
-        Route::post('/blood-requests/{bloodRequest}/respond', [DonorResponseController::class, 'respond'])
-            ->name('blood-requests.respond');
+            Route::get('/statistics', [DonorDashboardController::class, 'dashboard'])
+                ->name('statistics');
 
-        Route::get('/responses', [DonorResponseController::class, 'myResponses'])
-            ->name('responses.index');
+            /* ===== Donor Profile ===== */
 
-        Route::put('/responses/{donorResponse}/status', [DonorResponseController::class, 'updateStatus'])
-            ->name('responses.update-status');
-    });
+            Route::get('/profile', [DonorProfileController::class, 'show'])
+                ->name('profile.show');
 
-    /* ======================== Admin Routes ========================== */
+            Route::get('/profile/edit', [DonorProfileController::class, 'edit'])
+                ->name('profile.edit');
 
-    Route::middleware(['role:admin'])->prefix('admin')->name('admin.')->group(function () {
+            Route::put('/profile', [DonorProfileController::class, 'update'])
+                ->name('profile.update');
 
-        // Dashboard
-        Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('dashboard');
-        Route::get('/statistics', [BloodRequestAdminController::class, 'statistics'])
-            ->name('statistics');
+            Route::delete('/profile', [DonorProfileController::class, 'destroy'])
+                ->name('profile.destroy');
 
-        // Blood Request Management
-        Route::get('/blood-requests', [BloodRequestAdminController::class, 'index'])
-            ->name('blood-requests.index');
+            Route::post(
+                '/profile/create',
+                [DonorProfileController::class, 'store']
+            )
+                ->middleware('donor.profile.missing')
+                ->name('profile.store');
 
-        Route::get('/blood-requests/{bloodRequest}', [BloodRequestAdminController::class, 'show'])
-            ->name('blood-requests.show');
+            Route::post(
+                '/profile/availability',
+                [DonorProfileController::class, 'toggleAvailability']
+            )->name('availability.toggle');
 
-        Route::patch('/blood-requests/{bloodRequest}/approve', [BloodRequestAdminController::class, 'approve'])
-            ->name('blood-requests.approve');
+            /* ===== Blood Requests ===== */
 
-        Route::patch('/blood-requests/{bloodRequest}/fulfill', [BloodRequestAdminController::class, 'fulfill'])
-            ->name('blood-requests.fulfill');
+            Route::get(
+                '/blood-requests/available',
+                [DonorResponseController::class, 'getAvailableRequests']
+            )->name('blood-requests.available');
 
-        Route::patch('/blood-requests/{bloodRequest}/cancel', [BloodRequestAdminController::class, 'cancel'])
-            ->name('blood-requests.cancel');
+            Route::get(
+                '/blood-requests/{bloodRequest}',
+                [DonorResponseController::class, 'show']
+            )->name('blood-requests.show');
 
-        Route::delete('/blood-requests/{bloodRequest}', [BloodRequestAdminController::class, 'destroy'])
-            ->name('blood-requests.destroy');
+            Route::post(
+                '/blood-requests/{bloodRequest}/respond',
+                [DonorResponseController::class, 'respond']
+            )->name('blood-requests.respond');
 
-        // Donor Management
-        Route::get('/donors', [DonorAdminController::class, 'index'])
-            ->name('donors.index');
+            /* ===== Donor Responses ===== */
 
-        Route::get('/donors/{donorProfile}', [DonorAdminController::class, 'show'])
-            ->name('donors.show');
+            Route::get('/responses', [DonorResponseController::class, 'myResponses'])
+                ->name('responses.index');
 
-        Route::patch('/donors/{donorProfile}/approve', [DonorAdminController::class, 'approve'])
-            ->name('donors.approve');
+            Route::put(
+                '/responses/{donorResponse}/status',
+                [DonorResponseController::class, 'updateStatus']
+            )->name('responses.update-status');
+        });
 
-        Route::patch('/donors/{donorProfile}/reject', [DonorAdminController::class, 'reject'])
-            ->name('donors.reject');
+    /*
+    |--------------------------------------------------------------------------
+    | Admin Routes
+    |--------------------------------------------------------------------------
+    */
 
-        Route::delete('/donors/{donorProfile}', [DonorAdminController::class, 'destroy'])
-            ->name('donors.destroy');
+    Route::middleware(['role:admin'])
+        ->prefix('admin')
+        ->name('admin.')
+        ->group(function () {
 
-        Route::get('/donors/{donorProfile}/responses', [DonorAdminController::class, 'responses'])
-            ->name('donors.responses');
+            Route::get('/dashboard', [AdminDashboardController::class, 'index'])
+                ->name('dashboard');
 
-        Route::get('/donors-statistics', [DonorAdminController::class, 'statistics'])
-            ->name('donors.statistics');
+            Route::get('/statistics', [BloodRequestAdminController::class, 'statistics'])
+                ->name('statistics');
 
-        // User Management
-        Route::get('/users', [UserAdminController::class, 'index'])
-            ->name('users.index');
+            /* ===== Blood Requests ===== */
 
-        Route::get('/users/{user}', [UserAdminController::class, 'show'])
-            ->name('users.show');
+            Route::get('/blood-requests', [BloodRequestAdminController::class, 'index'])
+                ->name('blood-requests.index');
 
-        Route::patch('/users/{user}/verify', [UserAdminController::class, 'verify'])
-            ->name('users.verify');
+            Route::get(
+                '/blood-requests/{bloodRequest}',
+                [BloodRequestAdminController::class, 'show']
+            )->name('blood-requests.show');
 
-        Route::patch('/users/{user}/unverify', [UserAdminController::class, 'unverify'])
-            ->name('users.unverify');
+            Route::patch(
+                '/blood-requests/{bloodRequest}/approve',
+                [BloodRequestAdminController::class, 'approve']
+            )->name('blood-requests.approve');
 
-        Route::delete('/users/{user}', [UserAdminController::class, 'destroy'])
-            ->name('users.destroy');
+            Route::patch(
+                '/blood-requests/{bloodRequest}/fulfill',
+                [BloodRequestAdminController::class, 'fulfill']
+            )->name('blood-requests.fulfill');
 
-        Route::patch('/users/{user}/role', [UserAdminController::class, 'updateRole'])
-            ->name('users.update-role');
+            Route::patch(
+                '/blood-requests/{bloodRequest}/cancel',
+                [BloodRequestAdminController::class, 'cancel']
+            )->name('blood-requests.cancel');
 
-        // Reports
-        Route::get('/reports', [AdminDashboardController::class, 'reports'])
-            ->name('reports');
+            Route::delete(
+                '/blood-requests/{bloodRequest}',
+                [BloodRequestAdminController::class, 'destroy']
+            )->name('blood-requests.destroy');
 
-        Route::get('/reports/donations', [AdminDashboardController::class, 'donationReport'])
-            ->name('reports.donations');
+            /* ===== Donors ===== */
 
-        Route::get('/reports/requests', [AdminDashboardController::class, 'requestReport'])
-            ->name('reports.requests');
-    });
+            Route::get('/donors', [DonorAdminController::class, 'index'])
+                ->name('donors.index');
+
+            Route::get('/donors/{donorProfile}', [DonorAdminController::class, 'show'])
+                ->name('donors.show');
+
+            Route::patch(
+                '/donors/{donorProfile}/approve',
+                [DonorAdminController::class, 'approve']
+            )->name('donors.approve');
+
+            Route::patch(
+                '/donors/{donorProfile}/reject',
+                [DonorAdminController::class, 'reject']
+            )->name('donors.reject');
+
+            Route::delete(
+                '/donors/{donorProfile}',
+                [DonorAdminController::class, 'destroy']
+            )->name('donors.destroy');
+
+            Route::get(
+                '/donors/{donorProfile}/responses',
+                [DonorAdminController::class, 'responses']
+            )->name('donors.responses');
+
+            Route::get(
+                '/donors-statistics',
+                [DonorAdminController::class, 'statistics']
+            )->name('donors.statistics');
+
+            /* ===== Users ===== */
+
+            Route::get('/users', [UserAdminController::class, 'index'])
+                ->name('users.index');
+
+            Route::get('/users/{user}', [UserAdminController::class, 'show'])
+                ->name('users.show');
+
+            Route::patch(
+                '/users/{user}/verify',
+                [UserAdminController::class, 'verify']
+            )->name('users.verify');
+
+            Route::patch(
+                '/users/{user}/unverify',
+                [UserAdminController::class, 'unverify']
+            )->name('users.unverify');
+
+            Route::patch(
+                '/users/{user}/role',
+                [UserAdminController::class, 'updateRole']
+            )->name('users.update-role');
+
+            Route::delete(
+                '/users/{user}',
+                [UserAdminController::class, 'destroy']
+            )->name('users.destroy');
+
+            /* ===== Reports ===== */
+
+            Route::get('/reports', [AdminDashboardController::class, 'reports'])
+                ->name('reports');
+
+            Route::get(
+                '/reports/donations',
+                [AdminDashboardController::class, 'donationReport']
+            )->name('reports.donations');
+
+            Route::get(
+                '/reports/requests',
+                [AdminDashboardController::class, 'requestReport']
+            )->name('reports.requests');
+        });
 });
 
-/* ======================== Public Pages ========================== */
+/*
+|--------------------------------------------------------------------------
+| Public Pages (Guest)
+|--------------------------------------------------------------------------
+*/
 
 Route::middleware('guest')->group(function () {
     Route::view('/about', 'public.about')->name('about');
@@ -189,6 +309,10 @@ Route::middleware('guest')->group(function () {
     Route::view('/privacy', 'public.privacy')->name('privacy');
 });
 
-/* ======================== Auth Routes (Laravel Breeze) ========================== */
+/*
+|--------------------------------------------------------------------------
+| Auth Routes (Laravel Breeze)
+|--------------------------------------------------------------------------
+*/
 
 require __DIR__ . '/auth.php';

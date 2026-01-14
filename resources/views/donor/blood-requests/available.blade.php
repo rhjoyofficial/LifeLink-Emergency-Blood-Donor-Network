@@ -2,311 +2,233 @@
 
 @section('title', 'Available Blood Requests')
 
-@section('header')
-    <div class="mb-8">
-        <div class="flex justify-between items-center">
-            <div>
-                <h1 class="text-2xl font-bold text-gray-900">Available Blood Requests</h1>
-                <p class="mt-1 text-sm text-gray-600">Patients in need of your blood type:
-                    {{ auth()->user()->donorProfile->blood_group }}</p>
-            </div>
-            <div class="flex items-center space-x-3">
-                <select id="urgencyFilter"
-                    class="block w-40 pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-red-500 focus:border-red-500 rounded-md">
-                    <option value="all">All Urgency</option>
-                    <option value="critical">Critical</option>
-                    <option value="high">High</option>
-                    <option value="medium">Medium</option>
-                    <option value="low">Low</option>
-                </select>
-
-                <select id="locationFilter"
-                    class="block w-40 pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-red-500 focus:border-red-500 rounded-md">
-                    <option value="all">All Locations</option>
-                    <option value="district">My District Only</option>
-                    <option value="nearby">Nearby Areas</option>
-                </select>
-            </div>
-        </div>
-    </div>
-@endsection
-
 @section('content')
-    @if (!auth()->user()->donorProfile->approved_by_admin)
-        <div class="mb-6">
-            <div class="rounded-md bg-yellow-50 p-4">
-                <div class="flex">
-                    <div class="flex-shrink-0">
-                        <i class="fas fa-clock text-yellow-400 h-5 w-5"></i>
-                    </div>
-                    <div class="ml-3">
-                        <h3 class="text-sm font-medium text-yellow-800">Profile Pending Approval</h3>
-                        <div class="mt-2 text-sm text-yellow-700">
-                            <p>Your donor profile is awaiting admin approval. You'll be able to respond to blood requests
-                                once approved.</p>
-                        </div>
+    <div class="space-y-6">
+        <!-- Header -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h2 class="text-2xl font-bold text-gray-900">Available Blood Requests</h2>
+                    <p class="text-gray-600 mt-1">Blood requests matching your blood group and location</p>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <div class="text-right">
+                        <p class="text-sm text-gray-600">Matching Requests</p>
+                        <p class="text-xl font-bold text-primary">{{ $requests->total() }}</p>
                     </div>
                 </div>
             </div>
-        </div>
-    @endif
 
-    @if (!auth()->user()->donorProfile->is_available)
-        <div class="mb-6">
-            <div class="rounded-md bg-blue-50 p-4">
-                <div class="flex">
-                    <div class="flex-shrink-0">
-                        <i class="fas fa-bed text-blue-400 h-5 w-5"></i>
-                    </div>
-                    <div class="ml-3">
-                        <h3 class="text-sm font-medium text-blue-800">Currently Unavailable</h3>
-                        <div class="mt-2 text-sm text-blue-700">
-                            <p>You've marked yourself as unavailable to donate.
-                                <button onclick="toggleAvailability()"
-                                    class="text-blue-600 hover:text-blue-500 font-medium">
-                                    Click here to make yourself available
-                                </button>
+            <!-- Eligibility Status -->
+            @if (auth()->user()->donorProfile && !auth()->user()->donorProfile->canDonate())
+                <div class="mt-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+                    <div class="flex items-center">
+                        <i class="fas fa-exclamation-circle text-red-600 text-xl mr-3"></i>
+                        <div class="flex-1">
+                            <p class="font-medium text-red-800">Not Currently Eligible to Donate</p>
+                            <p class="text-sm text-red-700 mt-1">
+                                You are not eligible to donate yet. Minimum 90 days required between donations.
+                                @if (auth()->user()->donorProfile->last_donation_date)
+                                    Your last donation was on
+                                    {{ auth()->user()->donorProfile->last_donation_date->format('F j, Y') }}.
+                                @endif
                             </p>
                         </div>
                     </div>
                 </div>
-            </div>
+            @endif
         </div>
-    @endif
 
-    <!-- Eligibility Check -->
-    @php
-        $user = auth()->user();
-        $canDonate = $user->donorProfile->canDonate();
-        $lastDonation = $user->donorProfile->last_donation_date;
-    @endphp
+        <!-- Available Requests -->
+        <div class="space-y-6">
+            @forelse($requests as $request)
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                    <div class="p-6">
+                        <div class="flex flex-col lg:flex-row lg:items-start justify-between gap-6">
+                            <!-- Request Details -->
+                            <div class="flex-1">
+                                <div class="flex items-start justify-between">
+                                    <div>
+                                        <div class="flex items-center">
+                                            <span
+                                                class="px-3 py-1 bg-red-100 text-red-800 text-sm font-medium rounded-full mr-3">
+                                                {{ $request->blood_group }}
+                                            </span>
+                                            <h3 class="text-lg font-semibold text-gray-900">{{ $request->patient_name }}
+                                            </h3>
+                                        </div>
+                                        <p class="text-gray-600 mt-2">
+                                            <i class="fas fa-hospital mr-2"></i>{{ $request->hospital_name }}
+                                        </p>
+                                        <p class="text-gray-600 mt-1">
+                                            <i class="fas fa-map-marker-alt mr-2"></i>{{ $request->district }},
+                                            {{ $request->upazila }}
+                                        </p>
+                                    </div>
+                                    <div class="text-right">
+                                        <span
+                                            class="px-3 py-1 text-sm font-medium rounded-full 
+                                        @if ($request->urgency_level == 'critical') bg-red-100 text-red-800
+                                        @elseif($request->urgency_level == 'high') bg-orange-100 text-orange-800
+                                        @elseif($request->urgency_level == 'medium') bg-yellow-100 text-yellow-800
+                                        @else bg-green-100 text-green-800 @endif">
+                                            {{ ucfirst($request->urgency_level) }} Urgency
+                                        </span>
+                                        <p class="text-sm text-gray-600 mt-2">
+                                            <i class="fas fa-clock mr-1"></i> Needed by:
+                                            {{ $request->needed_at->format('M d, h:i A') }}
+                                        </p>
+                                    </div>
+                                </div>
 
-    @if ($lastDonation && !$canDonate)
-        <div class="mb-6">
-            <div class="rounded-md bg-red-50 p-4">
-                <div class="flex">
-                    <div class="flex-shrink-0">
-                        <i class="fas fa-calendar-times text-red-400 h-5 w-5"></i>
-                    </div>
-                    <div class="ml-3">
-                        @php
-                            $nextEligible = $lastDonation->copy()->addDays(90);
-                            $daysRemaining = now()->diffInDays($nextEligible, false);
-                        @endphp
-                        <h3 class="text-sm font-medium text-red-800">Donation Eligibility</h3>
-                        <div class="mt-2 text-sm text-red-700">
-                            <p>Your last donation was on {{ $lastDonation->format('F d, Y') }}. You can donate again in
-                                {{ $daysRemaining }} days (after {{ $nextEligible->format('F d, Y') }}).</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    @endif
+                                <!-- Additional Details -->
+                                <div class="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4">
+                                    <div>
+                                        <p class="text-sm text-gray-600">Bags Required</p>
+                                        <p class="font-medium text-gray-900">{{ $request->bags_required }}</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-sm text-gray-600">Contact Phone</p>
+                                        <p class="font-medium text-gray-900">{{ $request->contact_phone }}</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-sm text-gray-600">Request Status</p>
+                                        <span
+                                            class="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">
+                                            {{ ucfirst($request->status) }}
+                                        </span>
+                                    </div>
+                                    <div>
+                                        <p class="text-sm text-gray-600">Time Remaining</p>
+                                        <p
+                                            class="font-medium 
+                                        @if ($request->needed_at->diffInHours(now()) < 24) text-red-600
+                                        @elseif($request->needed_at->diffInHours(now()) < 48) text-orange-600
+                                        @else text-green-600 @endif">
+                                            {{ $request->needed_at->diffForHumans() }}
+                                        </p>
+                                    </div>
+                                </div>
 
-    <!-- Requests Grid -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        @forelse($bloodRequests as $request)
-            <div class="bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow">
-                <div class="p-6">
-                    <!-- Request Header -->
-                    <div class="flex justify-between items-start mb-4">
-                        <div>
-                            <div class="flex items-center">
-                                <span
-                                    class="blood-group-badge {{ strtolower(str_replace('+', 'p', $request->blood_group)) }} mr-2">
-                                    {{ $request->blood_group }}
-                                </span>
-                                <span class="urgency-badge {{ $request->urgency_level }}">
-                                    {{ ucfirst($request->urgency_level) }}
-                                </span>
+                                <!-- Donor Responses -->
+                                @if ($request->donorResponses->count() > 0)
+                                    <div class="mt-6 pt-6 border-t border-gray-100">
+                                        <div class="flex items-center">
+                                            <div class="flex -space-x-2 mr-3">
+                                                @foreach ($request->donorResponses->take(3) as $response)
+                                                    <div
+                                                        class="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center text-xs font-medium border-2 border-white">
+                                                        {{ substr($response->donor->name, 0, 1) }}
+                                                    </div>
+                                                @endforeach
+                                            </div>
+                                            <p class="text-sm text-gray-600">
+                                                {{ $request->donorResponses->count() }}
+                                                donor{{ $request->donorResponses->count() > 1 ? 's' : '' }} have responded
+                                            </p>
+                                        </div>
+                                    </div>
+                                @endif
                             </div>
-                            <h3 class="mt-2 text-lg font-semibold text-gray-900">{{ $request->patient_name }}</h3>
-                        </div>
-                        <div class="text-right">
-                            <div class="text-sm text-gray-500">{{ $request->needed_at->format('M d') }}</div>
-                            <div class="text-xs text-gray-400">{{ $request->needed_at->format('h:i A') }}</div>
-                        </div>
-                    </div>
 
-                    <!-- Request Details -->
-                    <div class="space-y-3 mb-6">
-                        <div class="flex items-center text-sm text-gray-600">
-                            <i class="fas fa-hospital text-gray-400 mr-2 w-5"></i>
-                            <span>{{ $request->hospital_name }}</span>
-                        </div>
+                            <!-- Action Buttons -->
+                            <div class="lg:w-64 space-y-3">
+                                <a href="{{ route('donor.blood-requests.show', $request) }}"
+                                    class="w-full flex items-center justify-center px-4 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
+                                    <i class="fas fa-eye mr-2"></i> View Details
+                                </a>
 
-                        <div class="flex items-center text-sm text-gray-600">
-                            <i class="fas fa-map-marker-alt text-gray-400 mr-2 w-5"></i>
-                            <span>{{ $request->district }}, {{ $request->upazila }}</span>
-                        </div>
-
-                        <div class="flex items-center text-sm text-gray-600">
-                            <i class="fas fa-tint text-gray-400 mr-2 w-5"></i>
-                            <span>{{ $request->bags_required }} bag(s) required</span>
-                        </div>
-
-                        <div class="flex items-center text-sm text-gray-600">
-                            <i class="fas fa-phone text-gray-400 mr-2 w-5"></i>
-                            <span>{{ $request->contact_phone }}</span>
-                        </div>
-
-                        @if ($request->additional_notes)
-                            <div class="text-sm text-gray-600">
-                                <i class="fas fa-sticky-note text-gray-400 mr-2 w-5"></i>
-                                <span class="italic">"{{ Str::limit($request->additional_notes, 80) }}"</span>
-                            </div>
-                        @endif
-                    </div>
-
-                    <!-- Distance & Time -->
-                    <div class="flex items-center justify-between mb-6 text-sm text-gray-500">
-                        <div class="flex items-center">
-                            <i class="fas fa-road mr-1"></i>
-                            <span>In your district</span>
-                        </div>
-                        <div class="flex items-center">
-                            <i class="far fa-clock mr-1"></i>
-                            <span>Needed {{ $request->needed_at->diffForHumans() }}</span>
-                        </div>
-                    </div>
-
-                    <!-- Action Buttons -->
-                    <div class="border-t border-gray-100 pt-4">
-                        @if ($request->hasResponded)
-                            <div class="text-center">
-                                <span
-                                    class="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                    <i class="fas fa-check mr-1"></i>
-                                    You've shown interest
-                                </span>
-                                <p class="mt-2 text-xs text-gray-500">The recipient will contact you</p>
-                            </div>
-                        @elseif($canDonate && $user->donorProfile->is_available && $user->donorProfile->approved_by_admin)
-                            <button onclick="respondToRequest({{ $request->id }})"
-                                class="w-full inline-flex justify-center items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
-                                <i class="fas fa-hand-paper mr-2"></i>
-                                I Can Help
-                            </button>
-                        @else
-                            <div class="text-center">
-                                <button disabled
-                                    class="w-full inline-flex justify-center items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-gray-400 cursor-not-allowed">
-                                    <i class="fas fa-lock mr-2"></i>
-                                    Not Available to Respond
-                                </button>
-                                <p class="mt-2 text-xs text-gray-500">
-                                    @if (!$user->donorProfile->approved_by_admin)
-                                        Profile pending approval
-                                    @elseif(!$user->donorProfile->is_available)
-                                        Mark yourself as available
-                                    @elseif(!$canDonate)
-                                        Not eligible to donate yet
+                                @if ($request->canDonorRespond() && auth()->user()->donorProfile && auth()->user()->donorProfile->canDonate())
+                                    <form action="{{ route('donor.blood-requests.respond', $request) }}" method="POST">
+                                        @csrf
+                                        <button type="submit"
+                                            class="w-full flex items-center justify-center px-4 py-3 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors font-medium">
+                                            <i class="fas fa-hand-paper mr-2"></i> I Can Help
+                                        </button>
+                                    </form>
+                                @else
+                                    @if (!auth()->user()->donorProfile || !auth()->user()->donorProfile->canDonate())
+                                        <button disabled
+                                            class="w-full flex items-center justify-center px-4 py-3 bg-gray-100 text-gray-400 rounded-lg cursor-not-allowed">
+                                            <i class="fas fa-clock mr-2"></i> Not Eligible
+                                        </button>
+                                    @elseif(!$request->canDonorRespond())
+                                        <button disabled
+                                            class="w-full flex items-center justify-center px-4 py-3 bg-gray-100 text-gray-400 rounded-lg cursor-not-allowed">
+                                            <i class="fas fa-times mr-2"></i> Request Closed
+                                        </button>
                                     @endif
-                                </p>
+                                @endif
                             </div>
-                        @endif
+                        </div>
                     </div>
                 </div>
+            @empty
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
+                    <div class="max-w-md mx-auto">
+                        <i class="fas fa-heart text-4xl text-gray-400 mb-4"></i>
+                        <h3 class="text-xl font-semibold text-gray-900 mb-2">No Available Requests</h3>
+                        <p class="text-gray-600 mb-6">
+                            There are currently no blood requests matching your blood group and location.
+                            Check back soon or update your profile location.
+                        </p>
+                        <a href="{{ route('donor.profile.edit') }}"
+                            class="inline-flex items-center px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors">
+                            <i class="fas fa-edit mr-2"></i> Update Profile
+                        </a>
+                    </div>
+                </div>
+            @endforelse
+        </div>
+
+        <!-- Pagination -->
+        @if ($requests->hasPages())
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+                {{ $requests->links() }}
             </div>
-        @empty
-            <div class="col-span-full">
-                <div class="text-center py-12">
-                    <i class="fas fa-heartbeat text-4xl mb-3 text-gray-300"></i>
-                    <p class="text-lg text-gray-500">No blood requests available</p>
-                    <p class="text-sm text-gray-400 mt-1">Check back later for new requests</p>
+        @endif
+
+        <!-- Auto-refresh Notice -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center">
+                    <i class="fas fa-sync-alt text-primary mr-3"></i>
+                    <div>
+                        <p class="text-sm font-medium text-gray-900">Auto-refresh Enabled</p>
+                        <p class="text-xs text-gray-600">This page refreshes every 30 seconds to show new requests</p>
+                    </div>
+                </div>
+                <div class="text-right">
+                    <p class="text-xs text-gray-600">Last updated: <span
+                            id="lastUpdated">{{ now()->format('h:i:s A') }}</span></p>
                 </div>
             </div>
-        @endforelse
+        </div>
     </div>
 
-    <!-- Pagination -->
-    @if ($bloodRequests->hasPages())
-        <div class="mt-6">
-            {{ $bloodRequests->links() }}
-        </div>
-    @endif
+    @push('scripts')
+        <script>
+            // Update last updated time
+            function updateLastUpdated() {
+                const now = new Date();
+                const timeElement = document.getElementById('lastUpdated');
+                const options = {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit',
+                    hour12: true
+                };
+                timeElement.textContent = now.toLocaleTimeString('en-US', options);
+            }
+
+            // Auto-refresh every 30 seconds
+            setInterval(() => {
+                location.reload();
+            }, 30000);
+
+            // Update time every second
+            setInterval(updateLastUpdated, 1000);
+            updateLastUpdated();
+        </script>
+    @endpush
 @endsection
-
-@push('scripts')
-    <script>
-        function toggleAvailability() {
-            if (confirm('Are you sure you want to make yourself available to donate?')) {
-                fetch('{{ route('donor.availability.toggle') }}', {
-                        method: 'POST',
-                        headers: {
-                            'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                            'Content-Type': 'application/json'
-                        }
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.message) {
-                            alert('You are now available to donate!');
-                            location.reload();
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error:', error);
-                        alert('An error occurred. Please try again.');
-                    });
-            }
-        }
-
-        function respondToRequest(requestId) {
-            if (confirm('Are you interested in donating for this request? The recipient will contact you.')) {
-                fetch(`/donor/blood-requests/${requestId}/respond`, {
-                        method: 'POST',
-                        headers: {
-                            'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                            'Content-Type': 'application/json'
-                        }
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.message) {
-                            alert('Thank you for your interest! The recipient will contact you soon.');
-                            location.reload();
-                        } else {
-                            alert(data.message || 'Something went wrong.');
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error:', error);
-                        alert('An error occurred. Please try again.');
-                    });
-            }
-        }
-
-        // Initialize filters
-        document.addEventListener('DOMContentLoaded', function() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const urgency = urlParams.get('urgency') || 'all';
-            const location = urlParams.get('location') || 'all';
-
-            document.getElementById('urgencyFilter').value = urgency;
-            document.getElementById('locationFilter').value = location;
-
-            // Add filter change listeners
-            document.getElementById('urgencyFilter').addEventListener('change', applyFilters);
-            document.getElementById('locationFilter').addEventListener('change', applyFilters);
-        });
-
-        function applyFilters() {
-            const urgency = document.getElementById('urgencyFilter').value;
-            const location = document.getElementById('locationFilter').value;
-
-            let url = new URL(window.location.href);
-            let params = new URLSearchParams(url.search);
-
-            if (urgency !== 'all') params.set('urgency', urgency);
-            else params.delete('urgency');
-
-            if (location !== 'all') params.set('location', location);
-            else params.delete('location');
-
-            params.set('page', '1');
-            window.location.href = url.pathname + '?' + params.toString();
-        }
-    </script>
-@endpush

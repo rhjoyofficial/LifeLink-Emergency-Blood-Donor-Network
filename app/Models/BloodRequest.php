@@ -25,11 +25,14 @@ class BloodRequest extends Model
         'contact_phone',
         'urgency_level',
         'needed_at',
+        'status',
+        'approved_by_admin'
     ];
 
     protected $casts = [
         'needed_at' => 'datetime',
         'bags_required' => 'integer',
+        'status' => 'string',
     ];
 
     /* ===================== Relationships ===================== */
@@ -66,7 +69,10 @@ class BloodRequest extends Model
 
     public function isClosed(): bool
     {
-        return in_array($this->status, ['fulfilled', 'cancelled']);
+        return in_array($this->status, [
+            self::STATUS_FULFILLED,
+            self::STATUS_CANCELLED
+        ]);
     }
 
     public function canDonorRespond(): bool

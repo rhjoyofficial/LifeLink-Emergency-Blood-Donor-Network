@@ -10,90 +10,84 @@ class UserAdminController extends Controller
 {
     public function index(Request $request)
     {
-        $role = $request->query('role', 'all');
-        $verified = $request->query('verified');
-
         $query = User::with(['donorProfile', 'recipientProfile']);
 
-        if ($role && $role !== 'all') {
-            $query->where('role', $role);
+        if ($request->filled('role')) {
+            $query->where('role', $request->role);
         }
 
-        if ($verified !== null) {
-            $query->where('is_verified', $verified === 'verified' ? true : false);
+        if ($request->filled('verified')) {
+            $query->where('is_verified', $request->verified === 'yes');
         }
 
-        $users = $query->orderBy('created_at', 'desc')->paginate(20);
+        $users = $query->latest()->paginate(20);
 
-        $stats = [
-            'total' => User::count(),
-            'admins' => User::where('role', 'admin')->count(),
-            'donors' => User::where('role', 'donor')->count(),
-            'recipients' => User::where('role', 'recipient')->count(),
-        ];
-
-        return view('admin.users.index', compact('users', 'stats'));
+        return view('admin.users.index', compact('users'));
     }
 
     public function show(User $user)
     {
-        $user->load(['donorProfile', 'recipientProfile', 'bloodRequests', 'donorResponses']);
+        $user->load([
+            'donorProfile',
+            'recipientProfile',
+            'bloodRequests',
+            'donorResponses.bloodRequest',
+        ]);
 
-        $bloodRequests = $user->bloodRequests()->with('donorResponses')->get();
-        $donorResponses = $user->donorResponses()->with('bloodRequest')->get();
-
-        return view('admin.users.show', compact('user', 'bloodRequests', 'donorResponses'));
+        return view('admin.users.show', compact('user'));
     }
 
     public function verify(User $user)
     {
-        if ($user->role === 'admin') {
-            return redirect()->back()->with('error', 'Admin users are automatically verified.');
+        if ($user->isAdmin()) {
+            return back()->with('error', 'Admins are always verified.');
         }
 
         $user->update(['is_verified' => true]);
 
-        return redirect()->back()->with('success', 'User verified successfully.');
+        return back()->with('success', 'User verified.');
     }
 
     public function unverify(User $user)
     {
-        if ($user->role === 'admin') {
-            return redirect()->back()->with('error', 'Cannot unverify admin users.');
+        if ($user->isAdmin()) {
+            return back()->with('error', 'Cannot unverify admin.');
         }
 
         $user->update(['is_verified' => false]);
 
-        return redirect()->back()->with('success', 'User unverified.');
+        return back()->with('success', 'User unverified.');
     }
 
     public function updateRole(Request $request, User $user)
     {
         $request->validate([
-            'role' => 'required|in:admin,donor,recipient'
+            'role' => 'required|in:admin,donor,recipient',
         ]);
 
         if ($user->id === auth()->id()) {
-            return redirect()->back()->with('error', 'You cannot change your own role.');
+            return back()->with('error', 'You cannot change your own role.');
         }
 
         $user->update(['role' => $request->role]);
 
-        return redirect()->back()->with('success', 'User role updated successfully.');
+        return back()->with('success', 'Role updated.');
     }
 
     public function destroy(User $user)
     {
-        if ($user->role === 'admin') {
-            return redirect()->back()->with('error', 'Cannot delete admin users.');
+        if ($user->isAdmin()) {
+            return back()->with('error', 'Admin users cannot be deleted.');
         }
 
         if ($user->id === auth()->id()) {
-            return redirect()->back()->with('error', 'You cannot delete your own account.');
+            return back()->with('error', 'You cannot delete your own account.');
         }
 
         $user->delete();
 
-        return redirect()->route('admin.users.index')->with('success', 'User deleted successfully.');
+        return redirect()
+            ->route('admin.users.index')
+            ->with('success', 'User deleted.');
     }
 }

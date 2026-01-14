@@ -2,218 +2,262 @@
 
 @section('title', 'Admin Dashboard')
 
-@section('breadcrumb')
-    <li class="inline-flex items-center">
-        <svg class="h-5 w-5 text-gray-400 mx-2" fill="currentColor" viewBox="0 0 20 20">
-            <path fill-rule="evenodd"
-                d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
-                clip-rule="evenodd" />
-        </svg>
-        <span class="text-gray-500">Home</span>
-    </li>
-@endsection
-
 @section('content')
     <div class="space-y-6">
-        <!-- Header -->
-        <div class="flex justify-between items-center">
-            <div>
-                <h1 class="text-2xl font-bold text-gray-900">Admin Dashboard</h1>
-                <p class="text-gray-600">Manage blood requests, donors, and users</p>
-            </div>
-            <div class="flex space-x-3">
-                <button onclick="refreshStats()"
-                    class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
-                    <i class="fas fa-sync-alt mr-2"></i>
-                    Refresh
-                </button>
-                <a href="{{ route('admin.reports') }}"
-                    class="inline-flex items-center px-4 py-2 border border-transparent rounded-lg text-sm font-medium text-white bg-red-600 hover:bg-red-700">
-                    <i class="fas fa-chart-bar mr-2"></i>
-                    Reports
-                </a>
+        <!-- Welcome Section -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h2 class="text-2xl font-bold text-gray-900">Welcome back, {{ auth()->user()->name }}! 👋</h2>
+                    <p class="text-gray-600 mt-2">Here's what's happening in your blood donation system today.</p>
+                </div>
+                <div class="text-right">
+                    <p class="text-sm text-gray-500">Current Time</p>
+                    <p class="text-xl font-bold text-primary" id="currentTime">{{ now()->format('h:i A') }}</p>
+                    <p class="text-sm text-gray-600">{{ now()->format('l, F j, Y') }}</p>
+                </div>
             </div>
         </div>
 
         <!-- Stats Grid -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            @foreach ([['icon' => 'fas fa-tint', 'color' => 'red', 'label' => 'Total Requests', 'value' => $stats['total_requests'] ?? 0, 'link' => route('admin.blood-requests.index')], ['icon' => 'fas fa-clock', 'color' => 'yellow', 'label' => 'Pending Approval', 'value' => $stats['pending_requests'] ?? 0, 'link' => route('admin.blood-requests.index', ['status' => 'pending'])], ['icon' => 'fas fa-check-circle', 'color' => 'green', 'label' => 'Active Requests', 'value' => $stats['approved_requests'] ?? 0, 'link' => route('admin.blood-requests.index', ['status' => 'approved'])], ['icon' => 'fas fa-users', 'color' => 'blue', 'label' => 'Active Donors', 'value' => $stats['approved_donors'] ?? 0, 'link' => route('admin.donors.index', ['status' => 'approved'])]] as $stat)
-                <div class="bg-white rounded-xl border border-gray-200 p-6">
-                    <div class="flex items-center">
-                        <div class="h-12 w-12 rounded-lg bg-{{ $stat['color'] }}-100 flex items-center justify-center">
-                            <i class="{{ $stat['icon'] }} text-{{ $stat['color'] }}-600 text-xl"></i>
-                        </div>
-                        <div class="ml-4">
-                            <p class="text-sm text-gray-500">{{ $stat['label'] }}</p>
-                            <p class="text-2xl font-bold text-gray-900">{{ $stat['value'] }}</p>
-                        </div>
+            <!-- Total Users -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm text-gray-600">Total Users</p>
+                        <p class="text-3xl font-bold text-gray-900 mt-2">{{ $stats['total_users'] }}</p>
                     </div>
-                    <a href="{{ $stat['link'] }}"
-                        class="mt-4 inline-block text-sm text-red-600 hover:text-red-700 font-medium">
-                        View details →
+                    <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                        <i class="fas fa-users text-blue-600 text-xl"></i>
+                    </div>
+                </div>
+                <div class="mt-4 pt-4 border-t border-gray-100">
+                    <span class="text-xs text-gray-500">
+                        <i class="fas fa-user-shield mr-1"></i> Admins:
+                        {{ $stats['total_donors'] - $stats['verified_donors'] }}
+                    </span>
+                </div>
+            </div>
+
+            <!-- Total Donors -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm text-gray-600">Total Donors</p>
+                        <p class="text-3xl font-bold text-gray-900 mt-2">{{ $stats['total_donors'] }}</p>
+                    </div>
+                    <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                        <i class="fas fa-hand-holding-heart text-green-600 text-xl"></i>
+                    </div>
+                </div>
+                <div class="mt-4 pt-4 border-t border-gray-100">
+                    <span class="text-xs text-green-600 font-medium">
+                        <i class="fas fa-check-circle mr-1"></i> Active: {{ $stats['active_donors'] }}
+                    </span>
+                    <span class="text-xs text-gray-500 ml-3">
+                        <i class="fas fa-user-check mr-1"></i> Verified: {{ $stats['verified_donors'] }}
+                    </span>
+                </div>
+            </div>
+
+            <!-- Blood Requests -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm text-gray-600">Blood Requests</p>
+                        <p class="text-3xl font-bold text-gray-900 mt-2">{{ $stats['total_requests'] }}</p>
+                    </div>
+                    <div class="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
+                        <i class="fas fa-tint text-red-600 text-xl"></i>
+                    </div>
+                </div>
+                <div class="mt-4 pt-4 border-t border-gray-100">
+                    <div class="flex justify-between text-xs">
+                        <span class="text-yellow-600">
+                            <i class="fas fa-clock mr-1"></i> Pending: {{ $stats['pending_requests'] }}
+                        </span>
+                        <span class="text-green-600">
+                            <i class="fas fa-check mr-1"></i> Approved: {{ $stats['approved_requests'] }}
+                        </span>
+                        <span class="text-blue-600">
+                            <i class="fas fa-check-double mr-1"></i> Fulfilled: {{ $stats['fulfilled_requests'] }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- System Health -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm text-gray-600">System Status</p>
+                        <p class="text-3xl font-bold text-green-600 mt-2">Healthy</p>
+                    </div>
+                    <div class="w-12 h-12 bg-primary-light rounded-lg flex items-center justify-center">
+                        <i class="fas fa-shield-alt text-primary text-xl"></i>
+                    </div>
+                </div>
+                <div class="mt-4 pt-4 border-t border-gray-100">
+                    <div class="flex items-center text-xs text-green-600">
+                        <i class="fas fa-circle mr-2 animate-pulse"></i>
+                        All services operational
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Activity & Quick Actions -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- Recent Blood Requests -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <div class="flex items-center justify-between mb-6">
+                    <h3 class="text-lg font-semibold text-gray-900">Recent Blood Requests</h3>
+                    <a href="{{ route('admin.blood-requests.index') }}"
+                        class="text-sm text-primary hover:text-primary-dark font-medium">
+                        View All <i class="fas fa-arrow-right ml-1"></i>
                     </a>
                 </div>
-            @endforeach
-        </div>
 
-        <!-- After Stats Grid, before Charts and Tables -->
-        <!-- Charts Section -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-            <!-- Monthly Requests Chart -->
-            <div class="bg-white rounded-xl border border-gray-200 p-6">
-                <div class="flex justify-between items-center mb-6">
-                    <div>
-                        <h3 class="text-lg font-semibold text-gray-900">Request Trends</h3>
-                        <p class="text-sm text-gray-500">Last 6 months</p>
-                    </div>
-                    <div class="flex space-x-2">
-                        <button onclick="updateChartTimeframe('monthly')" class="chart-timeframe-btn active"
-                            data-timeframe="monthly">
-                            Monthly
-                        </button>
-                        <button onclick="updateChartTimeframe('weekly')" class="chart-timeframe-btn"
-                            data-timeframe="weekly">
-                            Weekly
-                        </button>
-                    </div>
-                </div>
-                <div class="chart-container">
-                    <canvas id="requestsChart"></canvas>
-                </div>
-            </div>
-
-            <!-- Blood Group Distribution -->
-            <div class="bg-white rounded-xl border border-gray-200 p-6">
-                <div class="flex justify-between items-center mb-6">
-                    <div>
-                        <h3 class="text-lg font-semibold text-gray-900">Blood Group Distribution</h3>
-                        <p class="text-sm text-gray-500">All time requests</p>
-                    </div>
-                    <a href="{{ route('admin.blood-requests.index') }}" class="text-sm text-red-600 hover:text-red-700">
-                        View details
-                    </a>
-                </div>
-                <div class="chart-container">
-                    <canvas id="bloodGroupChart"></canvas>
-                </div>
-                <div class="mt-4 grid grid-cols-2 gap-3" id="bloodGroupLegend"></div>
-            </div>
-        </div>
-
-        <!-- Status Distribution Chart - Add this inside the Quick Stats column -->
-        <!-- In the Quick Stats column, add after System Status -->
-        <div class="bg-white rounded-xl border border-gray-200 p-6">
-            <h3 class="text-lg font-semibold text-gray-900 mb-4">Request Status</h3>
-            <div class="chart-container">
-                <canvas id="statusChart"></canvas>
-            </div>
-        </div>
-
-        <!-- Charts and Tables -->
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <!-- Recent Requests -->
-            <div class="lg:col-span-2">
-                <div class="bg-white rounded-xl border border-gray-200">
-                    <div class="px-6 py-4 border-b border-gray-200">
-                        <div class="flex justify-between items-center">
-                            <h2 class="text-lg font-semibold text-gray-900">Recent Blood Requests</h2>
-                            <a href="{{ route('admin.blood-requests.index') }}"
-                                class="text-sm text-red-600 hover:text-red-700">
-                                View all
-                            </a>
-                        </div>
-                    </div>
-                    <div class="divide-y divide-gray-200">
-                        @forelse($recentRequests as $request)
-                            <div class="px-6 py-4 hover:bg-gray-50">
-                                <div class="flex items-center justify-between">
-                                    <div class="flex items-center">
-                                        <span
-                                            class="blood-group-badge {{ strtolower(str_replace('+', 'p', $request->blood_group)) }}">
-                                            {{ $request->blood_group }}
-                                        </span>
-                                        <div class="ml-4">
-                                            <p class="font-medium text-gray-900">{{ $request->patient_name }}</p>
-                                            <p class="text-sm text-gray-500">{{ $request->hospital_name }}</p>
-                                        </div>
+                <div class="space-y-4">
+                    @forelse($recentRequests as $request)
+                        <div
+                            class="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                            <div>
+                                <div class="flex items-center">
+                                    <div
+                                        class="w-2 h-2 rounded-full 
+                                    @if ($request->urgency_level == 'critical') bg-red-500
+                                    @elseif($request->urgency_level == 'high') bg-orange-500
+                                    @elseif($request->urgency_level == 'medium') bg-yellow-500
+                                    @else bg-green-500 @endif mr-3">
                                     </div>
-                                    <div class="flex items-center space-x-3">
-                                        <span class="urgency-badge {{ $request->urgency_level }}">
-                                            {{ ucfirst($request->urgency_level) }}
-                                        </span>
-                                        <span class="status-badge {{ $request->status }}">
-                                            {{ ucfirst($request->status) }}
-                                        </span>
-                                        <a href="{{ route('admin.blood-requests.show', $request) }}"
-                                            class="text-gray-400 hover:text-red-600">
-                                            <i class="fas fa-eye"></i>
-                                        </a>
-                                    </div>
+                                    <p class="font-medium text-gray-900">{{ $request->patient_name }}</p>
+                                    <span
+                                        class="ml-3 px-2 py-1 text-xs font-medium rounded-full 
+                                    @if ($request->status == 'pending') bg-yellow-100 text-yellow-800
+                                    @elseif($request->status == 'approved') bg-green-100 text-green-800
+                                    @elseif($request->status == 'fulfilled') bg-blue-100 text-blue-800
+                                    @else bg-gray-100 text-gray-800 @endif">
+                                        {{ ucfirst($request->status) }}
+                                    </span>
                                 </div>
+                                <p class="text-sm text-gray-600 mt-1">
+                                    <i class="fas fa-hospital mr-2"></i>{{ $request->hospital_name }}
+                                    <span class="mx-2">•</span>
+                                    <i class="fas fa-map-marker-alt mr-1"></i>{{ $request->district }}
+                                </p>
                             </div>
-                        @empty
-                            <div class="px-6 py-8 text-center text-gray-500">
-                                <i class="fas fa-inbox text-3xl mb-3 text-gray-300"></i>
-                                <p>No recent requests</p>
+                            <div class="text-right">
+                                <p class="text-sm text-gray-600">{{ $request->needed_at->format('M d, h:i A') }}</p>
+                                <p class="text-xs text-gray-500">Needed by</p>
                             </div>
-                        @endforelse
-                    </div>
+                        </div>
+                    @empty
+                        <div class="text-center py-8 text-gray-500">
+                            <i class="fas fa-inbox text-3xl mb-3"></i>
+                            <p>No recent blood requests</p>
+                        </div>
+                    @endforelse
                 </div>
             </div>
 
-            <!-- Quick Stats -->
-            <div class="space-y-6">
-                <!-- Quick Actions -->
-                <div class="bg-white rounded-xl border border-gray-200 p-6">
-                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
-                    <div class="space-y-3">
-                        <a href="{{ route('admin.blood-requests.index', ['status' => 'pending']) }}"
-                            class="flex items-center justify-between p-3 bg-red-50 rounded-lg hover:bg-red-100">
-                            <div class="flex items-center">
-                                <i class="fas fa-clipboard-check text-red-600 mr-3"></i>
-                                <span class="font-medium text-gray-900">Review Pending Requests</span>
-                            </div>
-                            <i class="fas fa-chevron-right text-gray-400"></i>
-                        </a>
+            <!-- Quick Actions -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-6">Quick Actions</h3>
 
-                        <a href="{{ route('admin.donors.index', ['status' => 'pending']) }}"
-                            class="flex items-center justify-between p-3 bg-blue-50 rounded-lg hover:bg-blue-100">
-                            <div class="flex items-center">
-                                <i class="fas fa-user-check text-blue-600 mr-3"></i>
-                                <span class="font-medium text-gray-900">Approve Donors</span>
+                <div class="grid grid-cols-2 gap-4">
+                    <a href="{{ route('admin.blood-requests.index') }}"
+                        class="group p-4 bg-primary-light rounded-lg hover:bg-primary transition-colors">
+                        <div class="flex items-center">
+                            <div
+                                class="w-10 h-10 bg-white rounded-lg flex items-center justify-center mr-3 group-hover:bg-primary-light">
+                                <i class="fas fa-tasks text-primary group-hover:text-white"></i>
                             </div>
-                            <i class="fas fa-chevron-right text-gray-400"></i>
-                        </a>
+                            <div>
+                                <p class="font-medium text-gray-900 group-hover:text-white">Review Requests</p>
+                                <p class="text-xs text-gray-600 group-hover:text-white/80">{{ $stats['pending_requests'] }}
+                                    pending</p>
+                            </div>
+                        </div>
+                    </a>
 
-                        <a href="{{ route('admin.users.index') }}"
-                            class="flex items-center justify-between p-3 bg-green-50 rounded-lg hover:bg-green-100">
-                            <div class="flex items-center">
-                                <i class="fas fa-user-shield text-green-600 mr-3"></i>
-                                <span class="font-medium text-gray-900">Manage Users</span>
+                    <a href="{{ route('admin.donors.index') }}"
+                        class="group p-4 bg-accent-light rounded-lg hover:bg-accent transition-colors">
+                        <div class="flex items-center">
+                            <div
+                                class="w-10 h-10 bg-white rounded-lg flex items-center justify-center mr-3 group-hover:bg-accent-light">
+                                <i class="fas fa-user-check text-accent group-hover:text-white"></i>
                             </div>
-                            <i class="fas fa-chevron-right text-gray-400"></i>
-                        </a>
-                    </div>
+                            <div>
+                                <p class="font-medium text-gray-900 group-hover:text-white">Approve Donors</p>
+                                <p class="text-xs text-gray-600 group-hover:text-white/80">Manage approvals</p>
+                            </div>
+                        </div>
+                    </a>
+
+                    <a href="{{ route('admin.users.index') }}"
+                        class="group p-4 bg-blue-50 rounded-lg hover:bg-blue-600 transition-colors">
+                        <div class="flex items-center">
+                            <div
+                                class="w-10 h-10 bg-white rounded-lg flex items-center justify-center mr-3 group-hover:bg-blue-100">
+                                <i class="fas fa-user-shield text-blue-600 group-hover:text-white"></i>
+                            </div>
+                            <div>
+                                <p class="font-medium text-gray-900 group-hover:text-white">User Management</p>
+                                <p class="text-xs text-gray-600 group-hover:text-white/80">{{ $stats['total_users'] }}
+                                    users</p>
+                            </div>
+                        </div>
+                    </a>
+
+                    <a href="{{ route('admin.reports') }}"
+                        class="group p-4 bg-purple-50 rounded-lg hover:bg-purple-600 transition-colors">
+                        <div class="flex items-center">
+                            <div
+                                class="w-10 h-10 bg-white rounded-lg flex items-center justify-center mr-3 group-hover:bg-purple-100">
+                                <i class="fas fa-chart-bar text-purple-600 group-hover:text-white"></i>
+                            </div>
+                            <div>
+                                <p class="font-medium text-gray-900 group-hover:text-white">Generate Reports</p>
+                                <p class="text-xs text-gray-600 group-hover:text-white/80">Analytics & insights</p>
+                            </div>
+                        </div>
+                    </a>
                 </div>
 
-                <!-- System Status -->
-                <div class="bg-white rounded-xl border border-gray-200 p-6">
-                    <h3 class="text-lg font-semibold text-gray-900 mb-4">System Status</h3>
-                    <div class="space-y-4">
-                        @foreach ([['label' => 'Total Users', 'value' => $stats['total_users'] ?? 0], ['label' => 'Today\'s Requests', 'value' => $stats['today_requests'] ?? 0], ['label' => 'Urgent Requests', 'value' => $stats['urgent_requests'] ?? 0]] as $item)
-                            <div class="flex justify-between items-center">
-                                <span class="text-gray-600">{{ $item['label'] }}</span>
-                                <span class="font-medium text-gray-900">{{ $item['value'] }}</span>
+                <!-- System Alerts -->
+                <div class="mt-8 pt-6 border-t border-gray-100">
+                    <h4 class="font-medium text-gray-900 mb-3">System Alerts</h4>
+                    <div class="space-y-2">
+                        @if ($stats['pending_requests'] > 5)
+                            <div class="flex items-center p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                                <i class="fas fa-exclamation-triangle text-yellow-600 mr-3"></i>
+                                <div class="flex-1">
+                                    <p class="text-sm font-medium text-yellow-800">High pending requests</p>
+                                    <p class="text-xs text-yellow-600">{{ $stats['pending_requests'] }} requests need
+                                        attention</p>
+                                </div>
+                                <a href="{{ route('admin.blood-requests.index') }}"
+                                    class="text-sm text-yellow-700 hover:text-yellow-800">
+                                    Review
+                                </a>
                             </div>
-                        @endforeach
-                        <div class="flex justify-between items-center pt-3 border-t border-gray-100">
-                            <span class="text-gray-600">System Health</span>
-                            <span
-                                class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                <i class="fas fa-check-circle mr-1"></i>
-                                Operational
-                            </span>
-                        </div>
+                        @endif
+
+                        @if ($stats['active_donors'] < 10)
+                            <div class="flex items-center p-3 bg-red-50 border border-red-200 rounded-lg">
+                                <i class="fas fa-exclamation-circle text-red-600 mr-3"></i>
+                                <div class="flex-1">
+                                    <p class="text-sm font-medium text-red-800">Low donor availability</p>
+                                    <p class="text-xs text-red-600">Only {{ $stats['active_donors'] }} active donors</p>
+                                </div>
+                                <a href="{{ route('admin.donors.index') }}"
+                                    class="text-sm text-red-700 hover:text-red-800">
+                                    Check
+                                </a>
+                            </div>
+                        @endif
                     </div>
                 </div>
             </div>
@@ -222,378 +266,20 @@
 
     @push('scripts')
         <script>
-            function refreshStats() {
-                const button = event.target.closest('button');
-                const originalHtml = button.innerHTML;
-
-                button.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Refreshing...';
-                button.disabled = true;
-
-                fetch('{{ route('admin.statistics') }}')
-                    .then(response => response.json())
-                    .then(data => {
-                        // You would update your stats here
-                        console.log('Stats refreshed:', data);
-
-                        // Restore button
-                        setTimeout(() => {
-                            button.innerHTML = originalHtml;
-                            button.disabled = false;
-                        }, 1000);
-                    })
-                    .catch(error => {
-                        console.error('Error refreshing stats:', error);
-                        button.innerHTML = originalHtml;
-                        button.disabled = false;
-                    });
+            // Update current time every minute
+            function updateCurrentTime() {
+                const now = new Date();
+                const timeElement = document.getElementById('currentTime');
+                const options = {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hour12: true
+                };
+                timeElement.textContent = now.toLocaleTimeString('en-US', options);
             }
 
-            // Initialize charts if you have them
-            document.addEventListener('DOMContentLoaded', function() {
-                // Initialize any charts here
-            });
+            setInterval(updateCurrentTime, 60000);
+            updateCurrentTime();
         </script>
     @endpush
 @endsection
-
-@push('styles')
-    <style>
-        .chart-container {
-            position: relative;
-            height: 250px;
-            width: 100%;
-        }
-
-        .chart-timeframe-btn {
-            @apply px-3 py-1 text-sm rounded-lg border border-gray-300 bg-white text-gray-700 hover:bg-gray-50;
-        }
-
-        .chart-timeframe-btn.active {
-            @apply bg-red-50 border-red-300 text-red-700;
-        }
-
-        .blood-group-badge {
-            @apply inline-flex items-center px-3 py-1 rounded-full text-sm font-medium;
-        }
-
-        .blood-group-badge.a\\+ {
-            @apply bg-red-100 text-red-800;
-        }
-
-        .blood-group-badge.a\\- {
-            @apply bg-red-200 text-red-900;
-        }
-
-        .blood-group-badge.b\\+ {
-            @apply bg-blue-100 text-blue-800;
-        }
-
-        .blood-group-badge.b\\- {
-            @apply bg-blue-200 text-blue-900;
-        }
-
-        .blood-group-badge.ab\\+ {
-            @apply bg-purple-100 text-purple-800;
-        }
-
-        .blood-group-badge.ab\\- {
-            @apply bg-purple-200 text-purple-900;
-        }
-
-        .blood-group-badge.o\\+ {
-            @apply bg-green-100 text-green-800;
-        }
-
-        .blood-group-badge.o\\- {
-            @apply bg-green-200 text-green-900;
-        }
-    </style>
-@endpush
-
-@push('scripts')
-    <script>
-        let requestsChart = null;
-        let bloodGroupChart = null;
-        let statusChart = null;
-
-        document.addEventListener('DOMContentLoaded', function() {
-            initializeCharts();
-            setupChartResize();
-        });
-
-        function initializeCharts() {
-            // Destroy existing charts if they exist
-            if (requestsChart) requestsChart.destroy();
-            if (bloodGroupChart) bloodGroupChart.destroy();
-            if (statusChart) statusChart.destroy();
-
-            // 1. Monthly Requests Chart
-            const requestsCtx = document.getElementById('requestsChart').getContext('2d');
-            requestsChart = new Chart(requestsCtx, {
-                type: 'line',
-                data: {
-                    labels: @json($monthlyRequests['labels']),
-                    datasets: [{
-                        label: 'Blood Requests',
-                        data: @json($monthlyRequests['data']),
-                        borderColor: '#DC2626',
-                        backgroundColor: 'rgba(220, 38, 38, 0.1)',
-                        borderWidth: 2,
-                        fill: true,
-                        tension: 0.4,
-                        pointBackgroundColor: '#DC2626',
-                        pointBorderColor: '#fff',
-                        pointBorderWidth: 2,
-                        pointRadius: 4,
-                        pointHoverRadius: 6
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            display: false
-                        },
-                        tooltip: {
-                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                            titleColor: '#fff',
-                            bodyColor: '#fff',
-                            borderColor: '#DC2626',
-                            borderWidth: 1,
-                            callbacks: {
-                                label: function(context) {
-                                    return `${context.dataset.label}: ${context.parsed.y} requests`;
-                                }
-                            }
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            grid: {
-                                color: 'rgba(0, 0, 0, 0.05)'
-                            },
-                            ticks: {
-                                callback: function(value) {
-                                    if (Number.isInteger(value)) {
-                                        return value;
-                                    }
-                                }
-                            }
-                        },
-                        x: {
-                            grid: {
-                                display: false
-                            }
-                        }
-                    }
-                }
-            });
-
-            // 2. Blood Group Distribution Chart
-            const bloodGroupData = @json($bloodGroupDistribution);
-            const bloodGroupCtx = document.getElementById('bloodGroupChart').getContext('2d');
-
-            const bloodGroupColors = {
-                'A+': '#EF4444',
-                'A-': '#F87171',
-                'B+': '#3B82F6',
-                'B-': '#60A5FA',
-                'AB+': '#8B5CF6',
-                'AB-': '#A78BFA',
-                'O+': '#10B981',
-                'O-': '#34D399'
-            };
-
-            bloodGroupChart = new Chart(bloodGroupCtx, {
-                type: 'doughnut',
-                data: {
-                    labels: bloodGroupData.map(item => item.group),
-                    datasets: [{
-                        data: bloodGroupData.map(item => item.count),
-                        backgroundColor: bloodGroupData.map(item => bloodGroupColors[item.group]),
-                        borderWidth: 2,
-                        borderColor: '#fff'
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    cutout: '70%',
-                    plugins: {
-                        legend: {
-                            display: false
-                        },
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                                    const percentage = Math.round((context.parsed / total) * 100);
-                                    return `${context.label}: ${context.parsed} requests (${percentage}%)`;
-                                }
-                            }
-                        }
-                    }
-                }
-            });
-
-            // Update legend
-            updateBloodGroupLegend(bloodGroupData, bloodGroupColors);
-
-            // 3. Status Distribution Chart
-            const statusData = @json($statusDistribution);
-            const statusCtx = document.getElementById('statusChart').getContext('2d');
-
-            const statusColors = {
-                'pending': '#F59E0B',
-                'approved': '#3B82F6',
-                'fulfilled': '#10B981',
-                'rejected': '#EF4444',
-                'cancelled': '#6B7280'
-            };
-
-            statusChart = new Chart(statusCtx, {
-                type: 'bar',
-                data: {
-                    labels: Object.keys(statusData).map(key => key.charAt(0).toUpperCase() + key.slice(1)),
-                    datasets: [{
-                        data: Object.values(statusData),
-                        backgroundColor: Object.keys(statusData).map(key => statusColors[key]),
-                        borderWidth: 0,
-                        borderRadius: 6,
-                        borderSkipped: false,
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            display: false
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            grid: {
-                                display: false
-                            },
-                            ticks: {
-                                callback: function(value) {
-                                    if (Number.isInteger(value)) {
-                                        return value;
-                                    }
-                                }
-                            }
-                        },
-                        x: {
-                            grid: {
-                                display: false
-                            }
-                        }
-                    }
-                }
-            });
-        }
-
-        function updateBloodGroupLegend(data, colors) {
-            const legendContainer = document.getElementById('bloodGroupLegend');
-            if (!legendContainer) return;
-
-            legendContainer.innerHTML = '';
-
-            data.forEach(item => {
-                const total = data.reduce((sum, i) => sum + i.count, 0);
-                const percentage = Math.round((item.count / total) * 100);
-
-                const legendItem = document.createElement('div');
-                legendItem.className = 'flex items-center justify-between p-2 bg-gray-50 rounded-lg';
-                legendItem.innerHTML = `
-                <div class="flex items-center">
-                    <div class="w-3 h-3 rounded-full mr-2" style="background-color: ${colors[item.group]}"></div>
-                    <span class="text-sm font-medium text-gray-900">${item.group}</span>
-                </div>
-                <div class="text-right">
-                    <div class="text-sm font-bold text-gray-900">${item.count}</div>
-                    <div class="text-xs text-gray-500">${percentage}%</div>
-                </div>
-            `;
-                legendContainer.appendChild(legendItem);
-            });
-        }
-
-        function updateChartTimeframe(timeframe) {
-            // Update active button
-            document.querySelectorAll('.chart-timeframe-btn').forEach(btn => {
-                btn.classList.remove('active');
-                if (btn.dataset.timeframe === timeframe) {
-                    btn.classList.add('active');
-                }
-            });
-
-            // Show loading state
-            const chartContainer = document.querySelector('#requestsChart').closest('.chart-container');
-            chartContainer.innerHTML =
-                '<div class="flex items-center justify-center h-full"><i class="fas fa-spinner fa-spin text-2xl text-red-600"></i></div>';
-
-            // Fetch new data
-            fetch(`{{ route('admin.statistics') }}?timeframe=${timeframe}`)
-                .then(response => response.json())
-                .then(data => {
-                    // Update chart data
-                    requestsChart.data.labels = data.labels;
-                    requestsChart.data.datasets[0].data = data.data;
-                    requestsChart.update();
-
-                    // Restore chart
-                    chartContainer.innerHTML = '<canvas id="requestsChart"></canvas>';
-                    const ctx = document.getElementById('requestsChart').getContext('2d');
-                    requestsChart.ctx = ctx;
-                    requestsChart.canvas = document.getElementById('requestsChart');
-                })
-                .catch(error => {
-                    console.error('Error updating chart:', error);
-                    location.reload();
-                });
-        }
-
-        function setupChartResize() {
-            let resizeTimer;
-            window.addEventListener('resize', function() {
-                clearTimeout(resizeTimer);
-                resizeTimer = setTimeout(function() {
-                    if (requestsChart) requestsChart.resize();
-                    if (bloodGroupChart) bloodGroupChart.resize();
-                    if (statusChart) statusChart.resize();
-                }, 250);
-            });
-        }
-
-        function refreshStats() {
-            const button = event.target.closest('button');
-            const originalHtml = button.innerHTML;
-
-            button.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Refreshing...';
-            button.disabled = true;
-
-            fetch('{{ route('admin.statistics') }}')
-                .then(response => response.json())
-                .then(data => {
-                    // Update all charts
-                    initializeCharts();
-
-                    // Restore button
-                    setTimeout(() => {
-                        button.innerHTML = originalHtml;
-                        button.disabled = false;
-                    }, 1000);
-                })
-                .catch(error => {
-                    console.error('Error refreshing stats:', error);
-                    button.innerHTML = originalHtml;
-                    button.disabled = false;
-                });
-        }
-    </script>
-@endpush

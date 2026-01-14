@@ -11,124 +11,80 @@ class DonorProfileController extends Controller
 {
     public function show()
     {
-        $user = Auth::user();
-        $profile = $user->donorProfile;
+        $profile = Auth::user()->donorProfile;
 
-        if (!$profile) {
-            return redirect()->route('donor.profile.create');
+        if (! $profile) {
+            return redirect()->route('donor.profile.edit');
         }
 
-        $responses = $user->donorResponses()
-            ->with('bloodRequest')
-            ->orderBy('created_at', 'desc')
-            ->get();
-
-        return view('donor.profile.show', compact('profile', 'responses'));
+        return view('donor.profile.show', compact('profile'));
     }
 
     public function edit()
     {
-        $user = Auth::user();
-        $profile = $user->donorProfile;
-
-        if (!$profile) {
-            return redirect()->route('donor.profile.create');
-        }
+        $profile = Auth::user()->donorProfile;
 
         return view('donor.profile.edit', compact('profile'));
     }
 
-    public function create()
-    {
-        $user = Auth::user();
-
-        if ($user->donorProfile) {
-            return redirect()->route('donor.profile.edit');
-        }
-
-        return view('donor.profile.create');
-    }
-
     public function store(Request $request)
     {
-        $user = Auth::user();
+        $this->authorize('update', DonorProfile::class);
 
-        if ($user->donorProfile) {
-            return redirect()->route('donor.profile.edit')
-                ->with('error', 'Donor profile already exists.');
-        }
-
-        $validated = $request->validate([
-            'blood_group' => 'required|in:A+,A-,B+,B-,O+,O-,AB+,AB-',
-            'district' => 'required|string|max:255',
-            'upazila' => 'required|string|max:255',
-            'last_donation_date' => 'nullable|date|before:today',
-            'is_available' => 'boolean',
+        $data = $request->validate([
+            'blood_group'         => 'required|in:A+,A-,B+,B-,O+,O-,AB+,AB-',
+            'district'            => 'required|string|max:255',
+            'upazila'             => 'required|string|max:255',
+            'last_donation_date'  => 'nullable|date|before:today',
         ]);
 
-        $profile = DonorProfile::create([
-            'user_id' => $user->id,
-            'blood_group' => $validated['blood_group'],
-            'district' => $validated['district'],
-            'upazila' => $validated['upazila'],
-            'last_donation_date' => $validated['last_donation_date'] ?? null,
-            'is_available' => $validated['is_available'] ?? true,
-            'approved_by_admin' => false,
+        DonorProfile::create([
+            ...$data,
+            'user_id'             => Auth::id(),
+            'approved_by_admin'   => false,
+            'is_available'        => false,
         ]);
 
-        return redirect()->route('donor.dashboard')
+        return redirect()
+            ->route('donor.dashboard')
             ->with('success', 'Donor profile created. Awaiting admin approval.');
     }
 
     public function update(Request $request)
     {
-        $user = Auth::user();
-        $profile = $user->donorProfile;
+        $profile = Auth::user()->donorProfile;
 
-        if (!$profile) {
-            return redirect()->route('donor.profile.create')
-                ->with('error', 'Donor profile not found.');
-        }
+        $this->authorize('update', $profile);
 
-        $validated = $request->validate([
-            'blood_group' => 'sometimes|in:A+,A-,B+,B-,O+,O-,AB+,AB-',
-            'district' => 'sometimes|string|max:255',
-            'upazila' => 'sometimes|string|max:255',
+        $data = $request->validate([
+            'blood_group'        => 'sometimes|in:A+,A-,B+,B-,O+,O-,AB+,AB-',
+            'district'           => 'sometimes|string|max:255',
+            'upazila'            => 'sometimes|string|max:255',
             'last_donation_date' => 'nullable|date|before:today',
-            'is_available' => 'sometimes|boolean',
         ]);
 
-        // If blood group changes, admin needs to re-approve
-        if (isset($validated['blood_group']) && $validated['blood_group'] !== $profile->blood_group) {
-            $validated['approved_by_admin'] = false;
+        if (isset($data['blood_group']) &&
+            $data['blood_group'] !== $profile->blood_group) {
+            $data['approved_by_admin'] = false;
         }
 
-        $profile->update($validated);
+        $profile->update($data);
 
-        return redirect()->route('donor.profile.show')
-            ->with('success', 'Donor profile updated.');
+        return back()->with('success', 'Profile updated.');
     }
 
     public function toggleAvailability()
     {
-        $user = Auth::user();
-        $profile = $user->donorProfile;
+        $profile = Auth::user()->donorProfile;
 
-        if (!$profile) {
-            return redirect()->route('donor.profile.create')
-                ->with('error', 'Donor profile not found.');
-        }
-
-        if (!$profile->approved_by_admin) {
-            return redirect()->back()
-                ->with('error', 'Profile must be approved by admin first.');
+        if (! $profile->approved_by_admin) {
+            return back()->with('error', 'Profile not approved by admin.');
         }
 
         $profile->update([
-            'is_available' => !$profile->is_available
+            'is_available' => ! $profile->is_available,
         ]);
 
-        return redirect()->back()
-            ->with('success', 'Availability status updated.');
+        return back()->with('success', 'Availability updated.');
     }
 }
