@@ -147,11 +147,21 @@ Every critical action is auditable.
 ```bash
 git clone https://github.com/rhjoyofficial/lifelink.git
 cd lifelink
+npm run dev
 composer install
 cp .env.example .env
 php artisan key:generate
 php artisan migrate --seed
 php artisan serve
+```
+
+```.env
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=blood_donation_management_db
+DB_USERNAME=root
+DB_PASSWORD=
 ```
 
 ---
